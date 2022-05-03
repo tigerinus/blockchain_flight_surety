@@ -10,14 +10,6 @@ const STATUS_CODE_LATE_WEATHER = 30;
 const STATUS_CODE_LATE_TECHNICAL = 40;
 const STATUS_CODE_LATE_OTHER = 50;
 
-// Watch contract events
-const STATUS_CODE_UNKNOWN = 0;
-const STATUS_CODE_ON_TIME = 10;
-const STATUS_CODE_LATE_AIRLINE = 20;
-const STATUS_CODE_LATE_WEATHER = 30;
-const STATUS_CODE_LATE_TECHNICAL = 40;
-const STATUS_CODE_LATE_OTHER = 50;
-
 contract('Oracles', async (accounts) => {
 
   const TEST_ORACLES_COUNT = 9;

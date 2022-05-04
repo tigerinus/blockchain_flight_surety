@@ -19,6 +19,7 @@ flightSuretyApp.events.OracleRequest({
 
 const app = express();
 app.get('/api', (req, res) => {
+  console.log(req);
   res.send({
     message: 'An API for use with your Dapp!'
   })

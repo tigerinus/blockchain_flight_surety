@@ -1,7 +1,7 @@
-import FlightSuretyApp from '../../build/contracts/FlightSuretyApp.json';
-import Config from './config.json';
-import Web3 from 'web3';
-import express from 'express';
+const FlightSuretyApp = require('../../build/contracts/FlightSuretyApp.json');
+const Config = require('./config.json');
+const Web3 = require('web3');
+const express = require('express');
 
 
 let config = Config['localhost'];
@@ -11,19 +11,21 @@ let flightSuretyApp = new web3.eth.Contract(FlightSuretyApp.abi, config.appAddre
 
 
 flightSuretyApp.events.OracleRequest({
-    fromBlock: 0
-  }, function (error, event) {
-    if (error) console.log(error)
-    console.log(event)
+  fromBlock: 0
+}, function (error, event) {
+  if (error) console.log(error)
+  console.log(event)
 });
 
 const app = express();
 app.get('/api', (req, res) => {
-    res.send({
-      message: 'An API for use with your Dapp!'
-    })
+  res.send({
+    message: 'An API for use with your Dapp!'
+  })
 })
 
-export default app;
+app.listen(3000, () => {
+  console.log('Server running on port 3000');
+});
 
-
+module.exports = { app };

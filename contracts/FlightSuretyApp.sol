@@ -7,6 +7,9 @@ pragma solidity ^0.8.0;
 
 import "../node_modules/@openzeppelin/contracts/utils/math/SafeMath.sol";
 
+
+// @todo - add reference to FlightSuretyData contract
+
 /************************************************** */
 /* FlightSurety Smart Contract                      */
 /************************************************** */
@@ -89,7 +92,7 @@ contract FlightSuretyApp {
      * @dev Add an airline to the registration queue
      *
      */
-    function registerAirline()
+    function registerAirline(address airline)
         external
         pure
         returns (bool success, uint256 votes)

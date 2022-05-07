@@ -5,10 +5,8 @@ pragma solidity ^0.8.0;
 // OpenZeppelin's SafeMath library, when used correctly, protects agains such bugs
 // More info: https://www.nccgroup.trust/us/about-us/newsroom-and-events/blog/2018/november/smart-contract-insecurity-bad-arithmetic/
 
+import "./FlightSuretyData.sol";
 import "../node_modules/@openzeppelin/contracts/utils/math/SafeMath.sol";
-
-
-// @todo - add reference to FlightSuretyData contract
 
 /************************************************** */
 /* FlightSurety Smart Contract                      */
@@ -28,7 +26,8 @@ contract FlightSuretyApp {
     uint8 private constant STATUS_CODE_LATE_TECHNICAL = 40;
     uint8 private constant STATUS_CODE_LATE_OTHER = 50;
 
-    address private contractOwner; // Account used to deploy contract
+    address private _contractOwner; // Account used to deploy contract
+    FlightSuretyData private _data; // FlightSuretyData contract instance
 
     struct Flight {
         bool isRegistered;
@@ -60,7 +59,7 @@ contract FlightSuretyApp {
      * @dev Modifier that requires the "ContractOwner" account to be the function caller
      */
     modifier requireContractOwner() {
-        require(msg.sender == contractOwner, "Caller is not contract owner");
+        require(msg.sender == _contractOwner, "Caller is not contract owner");
         _;
     }
 
@@ -72,16 +71,25 @@ contract FlightSuretyApp {
      * @dev Contract constructor
      *
      */
-    constructor() {
-        contractOwner = msg.sender;
+    constructor(address firstAirline) {
+        _contractOwner = msg.sender;
+
+        // Initialize FlightSuretyData contract
+        _data = new FlightSuretyData();
+
+        _data.registerAirline(firstAirline);
     }
 
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
 
-    function isOperational() public pure returns (bool) {
-        return true; // Modify to call data contract's status
+    function isOperational() public view returns (bool) {
+        return _data.isOperational();
+    }
+
+    function setOperatingStatus(bool mode) public requireContractOwner {
+        _data.setOperatingStatus(mode);
     }
 
     /********************************************************************************************/
@@ -93,10 +101,11 @@ contract FlightSuretyApp {
      *
      */
     function registerAirline(address airline)
-        external
-        pure
+        public
+        requireIsOperational
         returns (bool success, uint256 votes)
     {
+        _data.registerAirline(airline);
         return (success, 0);
     }
 

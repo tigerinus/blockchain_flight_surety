@@ -10,8 +10,10 @@ contract FlightSuretyData {
     /*                                       DATA VARIABLES                                     */
     /********************************************************************************************/
 
-    address private contractOwner; // Account used to deploy contract
-    bool private operational = true; // Blocks all state changes throughout the contract if false
+    address private _contractOwner; // Account used to deploy contract
+    bool private _operational = true; // Blocks all state changes throughout the contract if false
+
+    mapping(address => bool) private _registeredAirlines;
 
     /********************************************************************************************/
     /*                                       EVENT DEFINITIONS                                  */
@@ -19,10 +21,10 @@ contract FlightSuretyData {
 
     /**
      * @dev Constructor
-     *      The deploying account becomes contractOwner
+     *      The deploying account becomes _contractOwner
      */
     constructor() {
-        contractOwner = msg.sender;
+        _contractOwner = msg.sender;
     }
 
     /********************************************************************************************/
@@ -38,15 +40,15 @@ contract FlightSuretyData {
      *      the event there is an issue that needs to be fixed
      */
     modifier requireIsOperational() {
-        require(operational, "Contract is currently not operational");
+        require(_operational, "Contract is currently not operational");
         _; // All modifiers require an "_" which indicates where the function body will be added
     }
 
     /**
-     * @dev Modifier that requires the "ContractOwner" account to be the function caller
+     * @dev Modifier that requires the "_ContractOwner" account to be the function caller
      */
     modifier requireContractOwner() {
-        require(msg.sender == contractOwner, "Caller is not contract owner");
+        require(msg.sender == _contractOwner, "Caller is not contract owner");
         _;
     }
 
@@ -60,7 +62,7 @@ contract FlightSuretyData {
      * @return A bool that is the current operating status
      */
     function isOperational() public view returns (bool) {
-        return operational;
+        return _operational;
     }
 
     /**
@@ -69,7 +71,7 @@ contract FlightSuretyData {
      * When operational mode is disabled, all write transactions except for this one will fail
      */
     function setOperatingStatus(bool mode) external requireContractOwner {
-        operational = mode;
+        _operational = mode;
     }
 
     /********************************************************************************************/
@@ -81,7 +83,17 @@ contract FlightSuretyData {
      *      Can only be called from FlightSuretyApp contract
      *
      */
-    function registerAirline() external {}
+    function registerAirline(address airline)
+        public
+        requireIsOperational
+        requireContractOwner
+    {
+        _registeredAirlines[airline] = true;
+    }
+
+    function isAirline(address airline) public view returns (bool) {
+        return _registeredAirlines[airline];
+    }
 
     /**
      * @dev Buy insurance for a flight

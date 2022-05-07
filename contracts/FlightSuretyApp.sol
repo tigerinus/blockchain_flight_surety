@@ -29,6 +29,8 @@ contract FlightSuretyApp {
     address private _contractOwner; // Account used to deploy contract
     FlightSuretyData private _data; // FlightSuretyData contract instance
 
+    mapping(address => uint256) private _registeredAirlineBalanceMap;
+
     struct Flight {
         bool isRegistered;
         uint8 statusCode;
@@ -74,6 +76,13 @@ contract FlightSuretyApp {
         _;
     }
 
+    modifier requireEnoughFunding() {
+        require(
+            _registeredAirlineBalanceMap[msg.sender] >= 1000000000000000000 // unit: wei
+        );
+        _;
+    }
+
     /********************************************************************************************/
     /*                                       CONSTRUCTOR                                        */
     /********************************************************************************************/
@@ -115,6 +124,7 @@ contract FlightSuretyApp {
         public
         requireIsOperational
         requireRegisteredAirline
+        requireEnoughFunding
         returns (bool success, uint256 votes)
     {
         _data.registerAirline(airline);

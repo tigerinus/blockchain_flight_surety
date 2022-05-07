@@ -13,7 +13,11 @@ contract FlightSuretyData {
     address private _contractOwner; // Account used to deploy contract
     bool private _operational = true; // Blocks all state changes throughout the contract if false
 
-    mapping(address => bool) private _registeredAirlines;
+    uint8 private _registeredAirlineCount;
+    mapping(address => mapping(address => bool))
+        private _registeredAirlineVoterMap;
+    mapping(address => uint8) private _registeredAirlineVoteCountMap;
+    mapping(address => bool) private _registeredAirlineMap;
 
     /********************************************************************************************/
     /*                                       EVENT DEFINITIONS                                  */
@@ -88,11 +92,41 @@ contract FlightSuretyData {
         requireIsOperational
         requireContractOwner
     {
-        _registeredAirlines[airline] = true;
+        // check if airline is already registered
+        if (_registeredAirlineMap[airline]) {
+            return;
+        }
+
+        // check if caller has already voted for this airline
+        if (_registeredAirlineVoterMap[airline][msg.sender]) {
+            return;
+        }
+
+        // increment vote count for airline to be registered
+        _registeredAirlineVoteCountMap[airline] += 1;
+        _registeredAirlineVoterMap[airline][msg.sender] = true;
+
+        // if already 4 or more registerd airlines,
+        if (_registeredAirlineCount >= 4) {
+            // and airline vote count is less than half # of registred airlines,
+            if (
+                _registeredAirlineVoteCountMap[airline] * 2 <
+                _registeredAirlineCount
+            ) {
+                // then do nothing
+                return;
+            }
+        }
+
+        // register the airline
+        _registeredAirlineMap[airline] = true;
+
+        // increment number of registered airlines
+        _registeredAirlineCount += 1;
     }
 
     function isAirline(address airline) public view returns (bool) {
-        return _registeredAirlines[airline];
+        return _registeredAirlineVoteCountMap[airline] > 0;
     }
 
     /**

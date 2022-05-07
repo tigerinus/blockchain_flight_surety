@@ -63,6 +63,17 @@ contract FlightSuretyApp {
         _;
     }
 
+    /**
+     * @dev Modifier that requires a registered airline account to be the function caller
+     */
+    modifier requireRegisteredAirline() {
+        require(
+            _data.isAirline(msg.sender),
+            "Caller is not a registered airline"
+        );
+        _;
+    }
+
     /********************************************************************************************/
     /*                                       CONSTRUCTOR                                        */
     /********************************************************************************************/
@@ -103,10 +114,20 @@ contract FlightSuretyApp {
     function registerAirline(address airline)
         public
         requireIsOperational
+        requireRegisteredAirline
         returns (bool success, uint256 votes)
     {
         _data.registerAirline(airline);
         return (success, 0);
+    }
+
+    function isAirline(address airline)
+        public
+        view
+        requireIsOperational
+        returns (bool)
+    {
+        return _data.isAirline(airline);
     }
 
     /**

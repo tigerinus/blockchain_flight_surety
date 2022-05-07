@@ -126,7 +126,11 @@ contract FlightSuretyData {
     }
 
     function isAirline(address airline) public view returns (bool) {
-        return _registeredAirlineVoteCountMap[airline] > 0;
+        return _registeredAirlineMap[airline];
+    }
+
+    function getRegisteredAirlineCount() public view returns (uint8) {
+        return _registeredAirlineCount;
     }
 
     /**

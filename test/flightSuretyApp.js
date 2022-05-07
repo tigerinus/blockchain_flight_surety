@@ -13,6 +13,9 @@ contract('Flight Surety Tests', async (accounts) => {
   /****************************************************************************************/
 
   it('(airline) cannot register an Airline using registerAirline() if it is not funded', async () => {
+    let registeredAirlineCount = await config.flightSuretyApp.getRegisteredAirlineCount.call();
+
+    assert(registeredAirlineCount < 4, 'Too many airlines registered');
 
     // ARRANGE
     let newAirline = accounts[2];
@@ -28,7 +31,33 @@ contract('Flight Surety Tests', async (accounts) => {
 
     // ASSERT
     assert.equal(result, false, "Airline should not be able to register another airline if it hasn't provided funding");
+  });
 
+  it('(airline) can register an Airline using registerAirline() if it is funded', async () => {
+    let registeredAirlineCount = await config.flightSuretyApp.getRegisteredAirlineCount.call();
+
+    assert(registeredAirlineCount < 4, 'Too many airlines registered');
+
+    // fund
+    await config.flightSuretyApp.sendTransaction({
+      value: web3.utils.toWei('10', 'ether'),
+      from: config.firstAirline
+    });
+
+    // ARRANGE
+    let newAirline = accounts[2];
+
+    // ACT
+    try {
+      await config.flightSuretyApp.registerAirline(newAirline, { from: config.firstAirline });
+    }
+    catch (e) {
+
+    }
+    let result = await config.flightSuretyApp.isAirline.call(newAirline);
+
+    // ASSERT
+    assert.equal(result, true, "Airline should be registered");
   });
 
 

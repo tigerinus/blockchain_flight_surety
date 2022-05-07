@@ -100,6 +100,18 @@ contract FlightSuretyApp {
         _data.registerAirline(firstAirline);
     }
 
+    /**
+     * @dev Fallback function for funding smart contract.
+     *
+     */
+    fallback() external payable {
+        require(false, "DEBUG: fallback() is called");
+    }
+
+    receive() external payable requireIsOperational requireRegisteredAirline {
+        _registeredAirlineBalanceMap[msg.sender] += msg.value;
+    }
+
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
@@ -138,6 +150,15 @@ contract FlightSuretyApp {
         returns (bool)
     {
         return _data.isAirline(airline);
+    }
+
+    function getRegisteredAirlineCount()
+        public
+        view
+        requireIsOperational
+        returns (uint256)
+    {
+        return _data.getRegisteredAirlineCount();
     }
 
     /**

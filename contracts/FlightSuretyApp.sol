@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 // OpenZeppelin's SafeMath library, when used correctly, protects agains such bugs
 // More info: https://www.nccgroup.trust/us/about-us/newsroom-and-events/blog/2018/november/smart-contract-insecurity-bad-arithmetic/
 
+import "./FlightSuretyData.sol";
 import "../node_modules/@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 /************************************************** */
@@ -25,7 +26,10 @@ contract FlightSuretyApp {
     uint8 private constant STATUS_CODE_LATE_TECHNICAL = 40;
     uint8 private constant STATUS_CODE_LATE_OTHER = 50;
 
-    address private contractOwner; // Account used to deploy contract
+    address private _contractOwner; // Account used to deploy contract
+    FlightSuretyData private _data; // FlightSuretyData contract instance
+
+    mapping(address => uint256) private _registeredAirlineBalanceMap;
 
     struct Flight {
         bool isRegistered;
@@ -34,6 +38,8 @@ contract FlightSuretyApp {
         address airline;
     }
     mapping(bytes32 => Flight) private flights;
+
+    event Log(bool success, uint8 votes);
 
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
@@ -57,7 +63,25 @@ contract FlightSuretyApp {
      * @dev Modifier that requires the "ContractOwner" account to be the function caller
      */
     modifier requireContractOwner() {
-        require(msg.sender == contractOwner, "Caller is not contract owner");
+        require(msg.sender == _contractOwner, "Caller is not contract owner");
+        _;
+    }
+
+    /**
+     * @dev Modifier that requires a registered airline account to be the function caller
+     */
+    modifier requireRegisteredAirline() {
+        require(
+            _data.isAirline(msg.sender),
+            "Caller is not a registered airline"
+        );
+        _;
+    }
+
+    modifier requireEnoughFunding() {
+        require(
+            _registeredAirlineBalanceMap[msg.sender] >= 1000000000000000000 // unit: wei
+        );
         _;
     }
 
@@ -69,16 +93,37 @@ contract FlightSuretyApp {
      * @dev Contract constructor
      *
      */
-    constructor() {
-        contractOwner = msg.sender;
+    constructor(address firstAirline) {
+        _contractOwner = msg.sender;
+
+        // Initialize FlightSuretyData contract
+        _data = new FlightSuretyData();
+
+        _data.registerAirline(firstAirline, _contractOwner);
+    }
+
+    /**
+     * @dev Fallback function for funding smart contract.
+     *
+     */
+    fallback() external payable {
+        require(false, "DEBUG: fallback() is called");
+    }
+
+    receive() external payable requireIsOperational requireRegisteredAirline {
+        _registeredAirlineBalanceMap[msg.sender] += msg.value;
     }
 
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
 
-    function isOperational() public pure returns (bool) {
-        return true; // Modify to call data contract's status
+    function isOperational() public view returns (bool) {
+        return _data.isOperational();
+    }
+
+    function setOperatingStatus(bool mode) public requireContractOwner {
+        _data.setOperatingStatus(mode);
     }
 
     /********************************************************************************************/
@@ -89,12 +134,50 @@ contract FlightSuretyApp {
      * @dev Add an airline to the registration queue
      *
      */
-    function registerAirline()
-        external
-        pure
-        returns (bool success, uint256 votes)
+    function registerAirline(address airline)
+        public
+        requireIsOperational
+        requireRegisteredAirline
+        requireEnoughFunding
     {
-        return (success, 0);
+        (bool success, uint8 votes) = _data.registerAirline(airline, msg.sender);
+        emit Log(success, votes);
+    }
+
+    function isAirline(address airline)
+        public
+        view
+        requireIsOperational
+        returns (bool)
+    {
+        return _data.isAirline(airline);
+    }
+
+    function getRegisteredAirlineCount()
+        public
+        view
+        requireIsOperational
+        returns (uint8)
+    {
+        return _data.getRegisteredAirlineCount();
+    }
+
+    function getAirlineVoteCount(address airline)
+        public
+        view
+        requireIsOperational
+        returns (uint8)
+    {
+        return _data.getAirlineVoteCount(airline);
+    }
+
+    function hasAccountVoted(address airline, address account)
+        public
+        view
+        requireIsOperational
+        returns (bool)
+    {
+        return _data.hasAccountVoted(airline, account);
     }
 
     /**

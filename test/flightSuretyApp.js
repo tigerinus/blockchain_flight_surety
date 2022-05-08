@@ -15,8 +15,8 @@ contract('Flight Surety Tests', async (accounts) => {
   it('1 - (airline) cannot register an Airline using registerAirline() if it is not funded', async () => {
 
     // prerequisite check
-    let registeredAirlineCount = await config.flightSuretyApp.getRegisteredAirlineCount.call();
-    assert.equal(registeredAirlineCount.toNumber(), 1, 'total number of airlines registered should be 1');
+    let registeredCount = await config.flightSuretyApp.getRegisteredAirlineCount.call();
+    assert.equal(registeredCount.toNumber(), 1, 'total number of airlines registered should be 1');
 
     // ARRANGE
     let airline2 = accounts[2];
@@ -40,8 +40,8 @@ contract('Flight Surety Tests', async (accounts) => {
   it('2 - (airline) can register an Airline using registerAirline() if it is funded', async () => {
 
     // prerequisite check
-    let registeredAirlineCount = await config.flightSuretyApp.getRegisteredAirlineCount.call();
-    assert.equal(registeredAirlineCount.toNumber(), 1, 'total number of airlines registered should be 1');
+    let registeredCount = await config.flightSuretyApp.getRegisteredAirlineCount.call();
+    assert.equal(registeredCount.toNumber(), 1, 'total number of airlines registered should be 1');
 
     // fund
     await config.flightSuretyApp.sendTransaction({
@@ -58,57 +58,57 @@ contract('Flight Surety Tests', async (accounts) => {
     // ASSERT
     assert.equal(transaction.logs[0].args.success, true, "airline registration should succeed");
 
-    let airline2VoteCount = transaction.logs[0].args.votes;
-    assert.equal(airline2VoteCount.toNumber(), 1, 'airline 2 should only have 1 vote so far');
+    let votes = transaction.logs[0].args.votes;
+    assert.equal(votes.toNumber(), 1, 'airline 2 should only have 1 vote so far');
 
     let result = await config.flightSuretyApp.isAirline.call(airline2);
     assert.equal(result, true, "airline2 should be registered");
 
-    registeredAirlineCount = await config.flightSuretyApp.getRegisteredAirlineCount.call();
-    assert.equal(registeredAirlineCount.toNumber(), 2, 'total number of airlines registered should be 2');
+    registeredCount = await config.flightSuretyApp.getRegisteredAirlineCount.call();
+    assert.equal(registeredCount.toNumber(), 2, 'total number of airlines registered should be 2');
 
-    let hasAccount1Voted = await config.flightSuretyApp.hasAccountVoted.call(airline2, accounts[1]);
-    assert.equal(hasAccount1Voted, true, 'account 1 should have voted for airline 2');
+    let voted = await config.flightSuretyApp.hasAccountVoted.call(airline2, accounts[1]);
+    assert.equal(voted, true, 'account 1 should have voted for airline 2');
   });
 
   it('3 - (airline) cannot register an Airline without multipart consensus after 4 airlines already registered', async () => {
 
     // prerequisite check
-    let registeredAirlineCount = await config.flightSuretyApp.getRegisteredAirlineCount.call();
-    assert.equal(registeredAirlineCount.toNumber(), 2, 'total number of airlines registered should be 2');
+    let registeredCount = await config.flightSuretyApp.getRegisteredAirlineCount.call();
+    assert.equal(registeredCount.toNumber(), 2, 'total number of airlines registered should be 2');
 
     // ARRANGE
     for (let i = 3; i <= 4; i++) {
-      let newAirline = accounts[i];
+      let airline = accounts[i];
 
-      let result1 = await config.flightSuretyApp.isAirline.call(newAirline);
+      let result1 = await config.flightSuretyApp.isAirline.call(airline);
       assert.equal(result1, false, "Airline should not be registered yet");
 
-      let hasAccountVoted1 = await config.flightSuretyApp.hasAccountVoted.call(newAirline, accounts[1]);
-      assert.equal(hasAccountVoted1, false, 'account 1 should have not yet voted for airline ' + i);
+      let voted1 = await config.flightSuretyApp.hasAccountVoted.call(airline, accounts[1]);
+      assert.equal(voted1, false, 'account 1 should have not yet voted for airline ' + i);
 
-      let airlineVoteCount1 = await config.flightSuretyApp.getAirlineVoteCount.call(newAirline);
-      assert.equal(airlineVoteCount1.toNumber(), 0, 'airline ' + i + ' should no vote so far');
+      let votes1 = await config.flightSuretyApp.getAirlineVoteCount.call(airline);
+      assert.equal(votes1.toNumber(), 0, 'airline ' + i + ' should no vote so far');
 
       // ACT
-      let transaction1 = await config.flightSuretyApp.registerAirline(newAirline, { from: accounts[1] });
+      let transaction1 = await config.flightSuretyApp.registerAirline(airline, { from: accounts[1] });
 
       // ASSERT
       assert.equal(transaction1.logs[0].args.success, true, "airline registration should succeed");
 
-      airlineVoteCount1 = transaction1.logs[0].args.votes;
-      assert.equal(airlineVoteCount1.toNumber(), 1, 'airline ' + i + ' should 1 vote');
+      votes1 = transaction1.logs[0].args.votes;
+      assert.equal(votes1.toNumber(), 1, 'airline ' + i + ' should 1 vote');
 
-      result1 = await config.flightSuretyApp.isAirline.call(newAirline);
+      result1 = await config.flightSuretyApp.isAirline.call(airline);
       assert.equal(result1, true, "Airline should be registered");
 
-      hasAccountVoted1 = await config.flightSuretyApp.hasAccountVoted.call(newAirline, accounts[1]);
-      assert.equal(hasAccountVoted1, true, 'account 1 should have voted for airline ' + i);
+      voted1 = await config.flightSuretyApp.hasAccountVoted.call(airline, accounts[1]);
+      assert.equal(voted1, true, 'account 1 should have voted for airline ' + i);
     }
 
     // ASSERT
-    registeredAirlineCount = await config.flightSuretyApp.getRegisteredAirlineCount.call();
-    assert.equal(4, registeredAirlineCount, 'Total number of airlines registered should be 4');
+    registeredCount = await config.flightSuretyApp.getRegisteredAirlineCount.call();
+    assert.equal(4, registeredCount, 'Total number of airlines registered should be 4');
 
     let airline5 = accounts[5];
 
@@ -118,23 +118,23 @@ contract('Flight Surety Tests', async (accounts) => {
     // ASSERT
     assert.equal(transaction2.logs[0].args.success, false, "airline registration should not succeed");
 
-    let airlineVoteCount2 = transaction2.logs[0].args.votes;
-    assert.equal(airlineVoteCount2.toNumber(), 1, 'airline 5 should 1 vote');
+    let votes2 = transaction2.logs[0].args.votes;
+    assert.equal(votes2.toNumber(), 1, 'airline 5 should 1 vote');
 
     let result2 = await config.flightSuretyApp.isAirline.call(airline5);
     assert.equal(result2, false, "airline 5 should not be registered");
 
-    let hasAccountVoted2 = await config.flightSuretyApp.hasAccountVoted.call(airline5, accounts[1]);
-    assert.equal(hasAccountVoted2, true, 'account 1 should have voted for airline 5');
+    let voted2 = await config.flightSuretyApp.hasAccountVoted.call(airline5, accounts[1]);
+    assert.equal(voted2, true, 'account 1 should have voted for airline 5');
 
-    registeredAirlineCount = await config.flightSuretyApp.getRegisteredAirlineCount.call();
-    assert.equal(4, registeredAirlineCount, 'Total number of airlines registered should still be 4');
+    registeredCount = await config.flightSuretyApp.getRegisteredAirlineCount.call();
+    assert.equal(4, registeredCount, 'Total number of airlines registered should still be 4');
   });
 
   it('4 - (airline) can register an Airline with multipart consensus after 4 airlines already registered', async () => {
     // prerequisite check
-    let registeredAirlineCount1 = await config.flightSuretyApp.getRegisteredAirlineCount.call();
-    assert.equal(registeredAirlineCount1.toNumber(), 4, 'total number of airlines registered should be 4');
+    let registeredCountPrevious = await config.flightSuretyApp.getRegisteredAirlineCount.call();
+    assert.equal(registeredCountPrevious.toNumber(), 4, 'total number of airlines registered should be 4');
 
     // fund
     for (let i = 2; i <= 3; i++) {
@@ -148,14 +148,14 @@ contract('Flight Surety Tests', async (accounts) => {
     let airline6 = accounts[6];
 
     // prerequisite check
-    let isAirline6Registered = await config.flightSuretyApp.isAirline.call(airline6);
-    assert.equal(isAirline6Registered, false, "airline 6 should not be registered");
+    let registered = await config.flightSuretyApp.isAirline.call(airline6);
+    assert.equal(registered, false, "airline 6 should not be registered");
 
-    let airline6VoteCount = await config.flightSuretyApp.getAirlineVoteCount.call(airline6);
-    assert.equal(airline6VoteCount.toNumber(), 0, 'airline 6 should have 0 vote so far');
+    let votes = await config.flightSuretyApp.getAirlineVoteCount.call(airline6);
+    assert.equal(votes.toNumber(), 0, 'airline 6 should have 0 vote so far');
 
-    let hasAccount2Voted = await config.flightSuretyApp.hasAccountVoted.call(airline6, accounts[2]);
-    assert.equal(hasAccount2Voted, false, 'account 2 should have not voted for airline 6 yet');
+    let voted = await config.flightSuretyApp.hasAccountVoted.call(airline6, accounts[2]);
+    assert.equal(voted, false, 'account 2 should have not voted for airline 6 yet');
 
     // let account2 vote for airline 5 by trying to register 
     let transaction = await config.flightSuretyApp.registerAirline(airline6, { from: accounts[2] });
@@ -163,18 +163,18 @@ contract('Flight Surety Tests', async (accounts) => {
     // ASSERT
     assert.equal(transaction.logs[0].args.success, false, "airline registration should not succeed");
 
-    airline6VoteCount = transaction.logs[0].args.votes;
-    assert.equal(airline6VoteCount.toNumber(), 1, 'airline 6 should 1 votes now');
+    votes = transaction.logs[0].args.votes;
+    assert.equal(votes.toNumber(), 1, 'airline 6 should 1 votes now');
 
-    let result1 = await config.flightSuretyApp.isAirline.call(airline6);
-    assert.equal(result1, false, "airline 6 should not be registered because it has got only 1 consensus so far.");
+    let result = await config.flightSuretyApp.isAirline.call(airline6);
+    assert.equal(result, false, "airline 6 should not be registered because it has got only 1 consensus so far.");
 
-    hasAccount2Voted = await config.flightSuretyApp.hasAccountVoted.call(airline6, accounts[2]);
-    assert.equal(hasAccount2Voted, true, 'account 2 should have voted for airline 6 by now');
+    voted = await config.flightSuretyApp.hasAccountVoted.call(airline6, accounts[2]);
+    assert.equal(voted, true, 'account 2 should have voted for airline 6 by now');
 
-    let registeredAirlineCount2 = await config.flightSuretyApp.getRegisteredAirlineCount.call();
+    let registeredCountAfter = await config.flightSuretyApp.getRegisteredAirlineCount.call();
 
-    assert.equal(registeredAirlineCount1.toNumber(), registeredAirlineCount2.toNumber(), 'register airline count should stay the same');
+    assert.equal(registeredCountPrevious.toNumber(), registeredCountAfter.toNumber(), 'register airline count should stay the same');
 
     // ACT
     transaction = await config.flightSuretyApp.registerAirline(airline6, { from: accounts[3] });
@@ -182,11 +182,11 @@ contract('Flight Surety Tests', async (accounts) => {
     // ASSERT
     assert.equal(transaction.logs[0].args.success, true, "airline registration should succeed");
 
-    airline6VoteCount = transaction.logs[0].args.votes;
-    assert.equal(airline6VoteCount.toNumber(), 2, 'airline 6 should 2 votes now');
+    votes = transaction.logs[0].args.votes;
+    assert.equal(votes.toNumber(), 2, 'airline 6 should 2 votes now');
 
-    let result2 = await config.flightSuretyApp.isAirline.call(airline6);
-    assert.equal(result2, true, "airline 6 should be registered because it has got 3 consensus so far which is more than half of 4 registered airlines.");
+    result = await config.flightSuretyApp.isAirline.call(airline6);
+    assert.equal(result, true, "airline 6 should be registered because it has got 3 consensus so far which is more than half of 4 registered airlines.");
   });
 
 

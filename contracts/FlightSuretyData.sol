@@ -23,6 +23,10 @@ contract FlightSuretyData {
     /*                                       EVENT DEFINITIONS                                  */
     /********************************************************************************************/
 
+    event AlreadyRegistered(address airline);
+    event AlreadyVoted(address airline, address account);
+    event VotesLessThanHalfOfTotalRegistered(address airline, uint8 votes, uint8 total);
+
     /**
      * @dev Constructor
      *      The deploying account becomes _contractOwner
@@ -95,11 +99,13 @@ contract FlightSuretyData {
     {
         // check if airline is already registered
         if (_registeredAirlineMap[airline]) {
+            emit AlreadyRegistered(airline);
             return (false, _registeredAirlineVoteCountMap[airline]);
         }
 
         // check if caller has already voted for this airline
         if (_registeredAirlineVoterMap[airline][account]) {
+            emit AlreadyVoted(airline, account);
             return (false, _registeredAirlineVoteCountMap[airline]);
         }
 
@@ -114,6 +120,7 @@ contract FlightSuretyData {
                 _registeredAirlineVoteCountMap[airline] * 2 <
                 _registeredAirlineCount
             ) {
+                emit VotesLessThanHalfOfTotalRegistered(airline, _registeredAirlineVoteCountMap[airline], _registeredAirlineCount);
                 // then do nothing
                 return (false, _registeredAirlineVoteCountMap[airline]);
             }

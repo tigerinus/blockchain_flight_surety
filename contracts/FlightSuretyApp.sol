@@ -39,6 +39,8 @@ contract FlightSuretyApp {
     }
     mapping(bytes32 => Flight) private flights;
 
+    event Log(bool success, uint8 votes);
+
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
     /********************************************************************************************/
@@ -97,7 +99,7 @@ contract FlightSuretyApp {
         // Initialize FlightSuretyData contract
         _data = new FlightSuretyData();
 
-        _data.registerAirline(firstAirline);
+        _data.registerAirline(firstAirline, _contractOwner);
     }
 
     /**
@@ -137,10 +139,9 @@ contract FlightSuretyApp {
         requireIsOperational
         requireRegisteredAirline
         requireEnoughFunding
-        returns (bool success, uint256 votes)
     {
-        _data.registerAirline(airline);
-        return (success, 0);
+        (bool success, uint8 votes) = _data.registerAirline(airline, msg.sender);
+        emit Log(success, votes);
     }
 
     function isAirline(address airline)
@@ -156,9 +157,27 @@ contract FlightSuretyApp {
         public
         view
         requireIsOperational
-        returns (uint256)
+        returns (uint8)
     {
         return _data.getRegisteredAirlineCount();
+    }
+
+    function getAirlineVoteCount(address airline)
+        public
+        view
+        requireIsOperational
+        returns (uint8)
+    {
+        return _data.getAirlineVoteCount(airline);
+    }
+
+    function hasAccountVoted(address airline, address account)
+        public
+        view
+        requireIsOperational
+        returns (bool)
+    {
+        return _data.hasAccountVoted(airline, account);
     }
 
     /**

@@ -87,24 +87,25 @@ contract FlightSuretyData {
      *      Can only be called from FlightSuretyApp contract
      *
      */
-    function registerAirline(address airline)
+    function registerAirline(address airline, address account)
         public
         requireIsOperational
         requireContractOwner
+        returns (bool success, uint8 votes)
     {
         // check if airline is already registered
         if (_registeredAirlineMap[airline]) {
-            return;
+            return (false, _registeredAirlineVoteCountMap[airline]);
         }
 
         // check if caller has already voted for this airline
-        if (_registeredAirlineVoterMap[airline][msg.sender]) {
-            return;
+        if (_registeredAirlineVoterMap[airline][account]) {
+            return (false, _registeredAirlineVoteCountMap[airline]);
         }
 
         // increment vote count for airline to be registered
         _registeredAirlineVoteCountMap[airline] += 1;
-        _registeredAirlineVoterMap[airline][msg.sender] = true;
+        _registeredAirlineVoterMap[airline][account] = true;
 
         // if already 4 or more registerd airlines,
         if (_registeredAirlineCount >= 4) {
@@ -114,7 +115,7 @@ contract FlightSuretyData {
                 _registeredAirlineCount
             ) {
                 // then do nothing
-                return;
+                return (false, _registeredAirlineVoteCountMap[airline]);
             }
         }
 
@@ -123,6 +124,8 @@ contract FlightSuretyData {
 
         // increment number of registered airlines
         _registeredAirlineCount += 1;
+
+        return (true, _registeredAirlineVoteCountMap[airline]);
     }
 
     function isAirline(address airline) public view returns (bool) {
@@ -131,6 +134,18 @@ contract FlightSuretyData {
 
     function getRegisteredAirlineCount() public view returns (uint8) {
         return _registeredAirlineCount;
+    }
+
+    function getAirlineVoteCount(address airline) public view returns (uint8) {
+        return _registeredAirlineVoteCountMap[airline];
+    }
+
+    function hasAccountVoted(address airline, address account)
+        public
+        view
+        returns (bool)
+    {
+        return _registeredAirlineVoterMap[airline][account];
     }
 
     /**

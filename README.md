@@ -13,9 +13,9 @@ To install, download or clone the repo, then:
 
 ## Develop Client
 
-Start ganache with preset secrets in order to get account addresses used in the tests.
+Start ganache with preset secrets in order to get enough account addresses for the tests and dapp.
 
-    ganache-cli -m "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat"
+    ganache-cli -m "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat" -a 20
 
 To run truffle tests:
 

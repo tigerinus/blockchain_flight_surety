@@ -1,5 +1,6 @@
 body {
-    background-image: url('flight.jpg'); /* Source: iStockPhoto */
+    background-image: url('flight.jpg');
+    /* Source: iStockPhoto */
     background-repeat: no-repeat;
     background-size: cover;
 }
@@ -34,9 +35,10 @@ section {
 }
 
 label.form {
-    font-size: 14px;
+    font-size: 20px;
     margin-right: 20px;
 }
-input {
+
+.field {
     margin-right: 30px;
 }

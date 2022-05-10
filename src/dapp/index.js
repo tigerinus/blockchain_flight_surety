@@ -14,12 +14,22 @@ import Contract from './contract';
       display('Operational Status', 'Check if contract is operational', [{ label: 'Operational Status', error: err, value: res }]);
     });
 
+    let airlineNames = ['Air Kitty', 'Air Rabbit', 'Air Puppy', 'Air Mice', 'Air Panda'];
+
+    for (let i = 1; i < contract.airlines.length; i++) {
+      let airline = contract.getAirline(i);
+      let option = DOM.option();
+      option.value = airline;
+      option.innerText = airlineNames[i - 1] + ' (' + airline.substring(0, 6) + '..)';
+      DOM.elid('airline-account').appendChild(option);
+    }
 
     // User-submitted transaction
     DOM.elid('submit-oracle').addEventListener('click', () => {
+      let airline = DOM.elid('airline-account').value;
       let flight = DOM.elid('flight-number').value;
       // Write transaction
-      contract.fetchFlightStatus(flight, (err, res) => {
+      contract.fetchFlightStatus(airline, flight, (err, res) => {
         display('Oracles', 'Trigger oracles', [{ label: 'Fetch Flight Status', error: err, value: res.flight + ' ' + res.timestamp }]);
       });
     })

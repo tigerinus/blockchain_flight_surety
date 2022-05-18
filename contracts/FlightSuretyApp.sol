@@ -37,7 +37,16 @@ contract FlightSuretyApp {
         uint256 updatedTimestamp;
         address airline;
     }
-    mapping(bytes32 => Flight) private flights;
+    mapping(bytes32 => Flight) private _flights;
+
+    struct Insurance {
+        address passenger;
+        bytes32 flightKey;
+        uint256 amount;
+    }
+
+    mapping(bytes32 => Insurance[]) private _flightKeyToInsurance;
+    mapping(address => uint256) _passengerToBalance;
 
     event Log(bool success, uint8 votes);
 
@@ -82,6 +91,17 @@ contract FlightSuretyApp {
         require(
             _registeredAirlineBalanceMap[msg.sender] >= 1000000000000000000 // unit: wei
         );
+        _;
+    }
+
+    modifier requireRegisteredFlight(
+        address airline,
+        string memory flight,
+        uint256 timestamp
+    ) {
+        bytes32 flightKey = getFlightKey(airline, flight, timestamp);
+
+        require(_flights[flightKey].isRegistered, "Flight is not registered");
         _;
     }
 
@@ -140,7 +160,10 @@ contract FlightSuretyApp {
         requireRegisteredAirline
         requireEnoughFunding
     {
-        (bool success, uint8 votes) = _data.registerAirline(airline, msg.sender);
+        (bool success, uint8 votes) = _data.registerAirline(
+            airline,
+            msg.sender
+        );
         emit Log(success, votes);
     }
 
@@ -181,10 +204,88 @@ contract FlightSuretyApp {
     }
 
     /**
+     * @dev Buy insurance for a flight
+     */
+    function buy(
+        address airline,
+        string memory flight,
+        uint256 timestamp
+    )
+        public
+        payable
+        requireIsOperational
+        requireRegisteredFlight(airline, flight, timestamp)
+    {
+        require(
+            msg.value <= 1000000000000000000,
+            "flight insurance must be no more than 1 ether"
+        );
+
+        bytes32 flightKey = getFlightKey(airline, flight, timestamp);
+        Insurance memory insurance = Insurance(
+            msg.sender,
+            flightKey,
+            msg.value
+        );
+
+        _flightKeyToInsurance[flightKey].push(insurance);
+    }
+
+    /**
+     *  @dev Credits payouts to insurees
+     */
+    function creditInsurees(bytes32 flightKey) internal requireIsOperational {
+        Insurance[] memory insuranceArray = _flightKeyToInsurance[flightKey];
+        for (uint256 i = 0; i < insuranceArray.length; i++) {
+            Insurance memory insurance = insuranceArray[i];
+            // passenger receives credit of 1.5X the amount they paid
+            _passengerToBalance[insurance.passenger] += SafeMath.add(
+                insurance.amount,
+                SafeMath.div(insurance.amount, 2)
+            );
+        }
+    }
+
+    /**
+     *  @dev Transfers eligible payout funds to insuree
+     */
+    function withdraw() public requireIsOperational {
+        uint256 repayment = _passengerToBalance[msg.sender];
+
+        if (repayment > 0) {
+            _passengerToBalance[msg.sender] = 0;
+
+            (bool sent, ) = msg.sender.call{value: repayment}("");
+
+            if (sent) {
+                return;
+            }
+
+            // If the call fails, refund the money
+            _passengerToBalance[msg.sender] = repayment;
+        }
+    }
+
+    /**
      * @dev Register a future flight for insuring.
      *
      */
-    function registerFlight() external pure {}
+    function registerFlight(
+        address airline,
+        string memory flight,
+        uint256 timestamp
+    ) public requireIsOperational {
+        bytes32 flightKey = getFlightKey(airline, flight, timestamp);
+
+        Flight memory newFlight = Flight(
+            true,
+            STATUS_CODE_UNKNOWN,
+            timestamp,
+            airline
+        );
+
+        _flights[flightKey] = newFlight;
+    }
 
     /**
      * @dev Called after oracle has updated flight status

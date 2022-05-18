@@ -270,18 +270,18 @@ contract FlightSuretyApp {
      * @dev Register a future flight for insuring.
      *
      */
-    function registerFlight(
-        address airline,
-        string memory flight,
-        uint256 timestamp
-    ) public requireIsOperational {
-        bytes32 flightKey = getFlightKey(airline, flight, timestamp);
+    function registerFlight(string memory flight, uint256 timestamp)
+        public
+        requireIsOperational
+        requireRegisteredAirline
+    {
+        bytes32 flightKey = getFlightKey(msg.sender, flight, timestamp);
 
         Flight memory newFlight = Flight(
             true,
             STATUS_CODE_UNKNOWN,
             timestamp,
-            airline
+            msg.sender
         );
 
         _flights[flightKey] = newFlight;

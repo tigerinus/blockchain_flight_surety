@@ -229,4 +229,58 @@ contract('Flight Surety Tests', async (accounts) => {
     assert.equal(accessDenied, false, "Access not restricted to Contract Owner");
 
   });
+
+  it(`8 - (airline) can register flight if the airline is registered`, async () => {
+    // ARRANGE
+    let flight = 'ND1309';
+    let timestamp = Math.floor(Date.now() / 1000);
+    let airline = accounts[1];
+
+    let result = await config.flightSuretyApp.isAirline.call(airline);
+    assert.equal(result, true, "airline should be registered");
+
+    // ACT
+    let succeed = true;
+
+    try {
+      await config.flightSuretyApp.registerFlight(flight, timestamp, { from: airline });
+    }
+    catch (e) {
+      succeed = false;
+    }
+
+    // ASSERT
+    assert.equal(succeed, true, "flight registration should succeed");
+  });
+
+  it(`9 - (airline) cannot register flight if the airline is not registered`, async () => {
+    // ARRANGE
+    let flight = 'ND1309';
+    let timestamp = Math.floor(Date.now() / 1000);
+    let airline = accounts[9];
+
+    let result = await config.flightSuretyApp.isAirline.call(airline);
+    assert.equal(result, false, "airline should not be registered");
+
+    // ACT
+    let succeed = true;
+
+    try {
+      await config.flightSuretyApp.registerFlight(flight, timestamp, { from: airline });
+    }
+    catch (e) {
+      succeed = false;
+    }
+
+    // ASSERT
+    assert.equal(succeed, false, "flight registration should fail");
+  });
+
+  it(`10 - (passenger) can buy insurance for a flight for less than 1 ether`, async () => {
+    // @todo - add test 
+  });
+
+  it(`11 - (passenger) cannot buy insurance for a flight for more than 1 ether`, async () => {
+    // @todo - add test 
+  }); 
 });

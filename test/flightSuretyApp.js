@@ -1,6 +1,22 @@
 
 var Test = require('../config/testConfig.js');
 
+const STATUS_CODE_UNKNOWN = 0;
+const STATUS_CODE_ON_TIME = 10;
+const STATUS_CODE_LATE_AIRLINE = 20;
+const STATUS_CODE_LATE_WEATHER = 30;
+const STATUS_CODE_LATE_TECHNICAL = 40;
+const STATUS_CODE_LATE_OTHER = 50;
+
+const STATUS_CODES = [
+  STATUS_CODE_UNKNOWN,
+  STATUS_CODE_ON_TIME,
+  STATUS_CODE_LATE_AIRLINE,
+  STATUS_CODE_LATE_WEATHER,
+  STATUS_CODE_LATE_TECHNICAL,
+  STATUS_CODE_LATE_OTHER
+];
+
 contract('Flight Surety Tests', async (accounts) => {
 
   /**
@@ -285,13 +301,15 @@ contract('Flight Surety Tests', async (accounts) => {
   });
 
   it(`10 - (passenger) can buy insurance for a flight for less than 1 ether`, async () => {
+    let passenger = accounts[10];
+    
     let airline1 = accounts[1];
     let flight = 'ND1309';
 
     let succeed = true;
 
     try {
-      await config.flightSuretyApp.buy(airline1, flight, timestamp, { from: accounts[10], value: web3.utils.toWei('0.5', 'ether') });
+      await config.flightSuretyApp.buy(airline1, flight, timestamp, { from: passenger, value: web3.utils.toWei('0.5', 'ether') });
     }
     catch (e) {
       succeed = false;
@@ -315,4 +333,22 @@ contract('Flight Surety Tests', async (accounts) => {
 
     assert.equal(succeed, false, "passenger should be able to buy insurance for less than 1 ether");
   });
+
+  it(`12 - (passenger) does not receive credit if flight is delayed due to weather`, async () => {
+    let passenger = accounts[10];
+
+    let balanceBefore = await web3.eth.getBalance(passenger);
+
+    let airline1 = accounts[1];
+    let flight = 'ND1309';
+
+    await config.flightSuretyApp.processFlightStatus(airline1, flight, timestamp, STATUS_CODE_LATE_WEATHER, { from: config.owner });
+
+    await config.flightSuretyApp.withdraw.call({ from: passenger });
+
+    let balanceAfter = await web3.eth.getBalance(passenger);
+
+    assert.equal(balanceBefore, balanceAfter, "passenger should not receive credit if flight is not delayed");
+  });
+
 });

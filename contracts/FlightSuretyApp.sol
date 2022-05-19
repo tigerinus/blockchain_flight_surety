@@ -296,8 +296,17 @@ contract FlightSuretyApp {
         string memory flight,
         uint256 timestamp,
         uint8 statusCode
-    ) internal pure {
-        // @todo calculate insurance for each passenger
+    ) public requireIsOperational requireContractOwner {
+        // calculate insurance for each passenger
+        if (statusCode != STATUS_CODE_LATE_AIRLINE) {
+            return;
+        }
+
+        bytes32 flightKey = getFlightKey(airline, flight, timestamp);
+
+        _flights[flightKey].statusCode = statusCode;
+
+        creditInsurees(flightKey);
     }
 
     // Generate a request for oracles to fetch flight information

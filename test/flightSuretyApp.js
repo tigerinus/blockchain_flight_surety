@@ -3,7 +3,17 @@ var Test = require('../config/testConfig.js');
 
 contract('Flight Surety Tests', async (accounts) => {
 
+  /**
+   * account  0 is the owner of the contract
+   * accounts  1 - 9  are airlines
+   * accounts 10 - 19 are passengers
+   * accounts 20 - 49 are oracles
+   */
+
   var config;
+
+  const timestamp = Math.floor(Date.now() / 1000);
+
   before('setup contract', async () => {
     config = await Test.Config(accounts);
   });
@@ -233,7 +243,6 @@ contract('Flight Surety Tests', async (accounts) => {
   it(`8 - (airline) can register flight if the airline is registered`, async () => {
     // ARRANGE
     let flight = 'ND1309';
-    let timestamp = Math.floor(Date.now() / 1000);
     let airline = accounts[1];
 
     let result = await config.flightSuretyApp.isAirline.call(airline);
@@ -256,17 +265,16 @@ contract('Flight Surety Tests', async (accounts) => {
   it(`9 - (airline) cannot register flight if the airline is not registered`, async () => {
     // ARRANGE
     let flight = 'ND1309';
-    let timestamp = Math.floor(Date.now() / 1000);
-    let airline = accounts[9];
+    let airline7 = accounts[7];
 
-    let result = await config.flightSuretyApp.isAirline.call(airline);
+    let result = await config.flightSuretyApp.isAirline.call(airline7);
     assert.equal(result, false, "airline should not be registered");
 
     // ACT
     let succeed = true;
 
     try {
-      await config.flightSuretyApp.registerFlight(flight, timestamp, { from: airline });
+      await config.flightSuretyApp.registerFlight(flight, timestamp, { from: airline7 });
     }
     catch (e) {
       succeed = false;
@@ -277,10 +285,34 @@ contract('Flight Surety Tests', async (accounts) => {
   });
 
   it(`10 - (passenger) can buy insurance for a flight for less than 1 ether`, async () => {
-    // @todo - add test 
+    let airline1 = accounts[1];
+    let flight = 'ND1309';
+
+    let succeed = true;
+
+    try {
+      await config.flightSuretyApp.buy(airline1, flight, timestamp, { from: accounts[10], value: web3.utils.toWei('0.5', 'ether') });
+    }
+    catch (e) {
+      succeed = false;
+    }
+
+    assert.equal(succeed, true, "passenger should be able to buy insurance for less than 1 ether");
   });
 
   it(`11 - (passenger) cannot buy insurance for a flight for more than 1 ether`, async () => {
-    // @todo - add test 
-  }); 
+    let airline1 = accounts[1];
+    let flight = 'ND1309';
+
+    let succeed = true;
+
+    try {
+      await config.flightSuretyApp.buy(airline1, flight, timestamp, { from: accounts[10], value: web3.utils.toWei('1.5', 'ether') });
+    }
+    catch (e) {
+      succeed = false;
+    }
+
+    assert.equal(succeed, false, "passenger should be able to buy insurance for less than 1 ether");
+  });
 });

@@ -302,7 +302,7 @@ contract('Flight Surety Tests', async (accounts) => {
 
   it(`10 - (passenger) can buy insurance for a flight for less than 1 ether`, async () => {
     let passenger = accounts[10];
-    
+
     let airline1 = accounts[1];
     let flight = 'ND1309';
 
@@ -319,13 +319,15 @@ contract('Flight Surety Tests', async (accounts) => {
   });
 
   it(`11 - (passenger) cannot buy insurance for a flight for more than 1 ether`, async () => {
+    let passenger = accounts[10];
+
     let airline1 = accounts[1];
     let flight = 'ND1309';
 
     let succeed = true;
 
     try {
-      await config.flightSuretyApp.buy(airline1, flight, timestamp, { from: accounts[10], value: web3.utils.toWei('1.5', 'ether') });
+      await config.flightSuretyApp.buy(airline1, flight, timestamp, { from: passenger, value: web3.utils.toWei('1.5', 'ether') });
     }
     catch (e) {
       succeed = false;
@@ -337,18 +339,37 @@ contract('Flight Surety Tests', async (accounts) => {
   it(`12 - (passenger) does not receive credit if flight is delayed due to weather`, async () => {
     let passenger = accounts[10];
 
-    let balanceBefore = await web3.eth.getBalance(passenger);
-
     let airline1 = accounts[1];
     let flight = 'ND1309';
 
     await config.flightSuretyApp.processFlightStatus(airline1, flight, timestamp, STATUS_CODE_LATE_WEATHER, { from: config.owner });
 
+    let creditBalance = await config.flightSuretyApp.getCreditBalance.call({ from: passenger });
+
+    assert.equal(creditBalance.toNumber(), 0, "credit balance should be 0 for the passenger");
+
+    let result = await config.flightSuretyApp.withdraw.call({ from: passenger });
+
+    assert.equal(result, false, "credit withdraw should fail");
+  });
+
+  it(`12 - (passenger) receives credit if flight is delayed due to airline`, async () => {
+    let passenger = accounts[10];
+
+    let airline1 = accounts[1];
+    let flight = 'ND1309';
+
+    await config.flightSuretyApp.processFlightStatus(airline1, flight, timestamp, STATUS_CODE_LATE_AIRLINE, { from: config.owner });
+
+    let creditBalance = await config.flightSuretyApp.getCreditBalance.call({ from: passenger });
+
+    assert.equal("750000000000000000", creditBalance.toString(), "credit balance should be 0.75 ether which is 1.5x of 0.5 ether insured");
+
     await config.flightSuretyApp.withdraw.call({ from: passenger });
 
-    let balanceAfter = await web3.eth.getBalance(passenger);
+    let result = await config.flightSuretyApp.withdraw.call({ from: passenger });
 
-    assert.equal(balanceBefore, balanceAfter, "passenger should not receive credit if flight is not delayed");
+    assert.equal(result, true, "credit withdraw should succeed");
   });
 
 });

@@ -246,10 +246,19 @@ contract FlightSuretyApp {
         }
     }
 
+    function getCreditBalance()
+        public
+        view
+        requireIsOperational
+        returns (uint256)
+    {
+        return _passengerToBalance[msg.sender];
+    }
+
     /**
      *  @dev Transfers eligible payout funds to insuree
      */
-    function withdraw() public requireIsOperational {
+    function withdraw() public requireIsOperational returns (bool) {
         uint256 repayment = _passengerToBalance[msg.sender];
 
         if (repayment > 0) {
@@ -258,12 +267,15 @@ contract FlightSuretyApp {
             (bool sent, ) = msg.sender.call{value: repayment}("");
 
             if (sent) {
-                return;
+                return true;
             }
 
             // If the call fails, refund the money
             _passengerToBalance[msg.sender] = repayment;
+            return false;
         }
+
+        return false;
     }
 
     /**

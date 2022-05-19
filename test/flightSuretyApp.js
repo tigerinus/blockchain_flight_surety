@@ -363,7 +363,7 @@ contract('Flight Surety Tests', async (accounts) => {
 
     let creditBalance = await config.flightSuretyApp.getCreditBalance.call({ from: passenger });
 
-    assert.equal("750000000000000000", creditBalance.toString(), "credit balance should be 0.75 ether which is 1.5x of 0.5 ether insured");
+    assert.equal("750000000000000000", creditBalance.toString(), "credit balance should be 0.75 ether which is 1.5x of 0.5 ether insured in test 10");
 
     await config.flightSuretyApp.withdraw.call({ from: passenger });
 
